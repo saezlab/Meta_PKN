@@ -1,0 +1,48 @@
+library(readr)
+
+STITCH_900 <- as.data.frame(read_delim("Dropbox/Meta_PKN/STITCH_network/STITCH_900.tsv", 
+                         "\t", escape_double = FALSE, trim_ws = TRUE))
+
+STITCH_900 <- STITCH_900[STITCH_900$a_is_acting,]
+
+prots <- unique(c(STITCH_900$item_id_a, STITCH_900$item_id_b))
+prots <- prots[grepl("9606[.]ENSP", prots)]
+prots <- as.data.frame(cbind(prots, gsub("9606[.]","",prots)))
+
+library(biomaRt)
+
+ensembl = useEnsembl(biomart="ensembl", dataset="hsapiens_gene_ensembl")
+
+G_list <- getBM(filters = "ensembl_peptide_id", 
+                attributes = c("ensembl_peptide_id",'hgnc_symbol','entrezgene', "description"),
+                values = prots$V2, mart = ensembl)
+names(G_list)[1] <- "V2"
+
+prots <- merge(prots, G_list, by = "V2")
+prots <- prots[prots$entrezgene != "",]
+
+prots_vec <- prots$entrezgene
+names(prots_vec) <- prots$prots
+
+for(i in 1:2)
+{
+  for(j in 1:length(STITCH_900[,1]))
+  {
+    if(STITCH_900[j,i] %in% names(prots_vec))
+    {
+      STITCH_900[j,i] <- prots_vec[STITCH_900[j,i]]
+    }
+    else
+    {
+      STITCH_900[j,i] <- gsub("CID[a-z]0*","Metab__",STITCH_900[j,i])
+    }
+  }
+}
+
+STITCH_900$sign <- ifelse(STITCH_900$action == "inhibition", -1, 1)
+STITCH_900 <- STITCH_900[grepl("Metab__",STITCH_900$item_id_a),]
+
+STITCH_900 <- STITCH_900[,c(1,7,2)]
+names(STITCH_900) <- c("source","sign","target")
+
+write_csv(STITCH_900,"Dropbox/Meta_PKN/STITCH_network/STITCH_900_sif.csv")

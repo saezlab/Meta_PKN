@@ -1,0 +1,1 @@
+cat ~/Documents/Recon3/support/kegg_amino_acid | awk 'NR%2==1' >> ~/Documents/Recon3/support/kegg_amino_acid_only
