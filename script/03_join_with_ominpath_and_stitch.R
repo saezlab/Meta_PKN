@@ -1,14 +1,19 @@
 library(readr)
 
+#Import recon3D reaction network in sif format
 reaction_network_recon3_no_cofact <- as.data.frame(read_csv("Dropbox/Meta_PKN/recon3D_netowrk/reaction_network_recon3_no_cofact.csv"))
 
+#Import STITCH allosteric interactions in SIF format
 STITCH_900_sif <- as.data.frame(read_csv("Dropbox/Meta_PKN/STITCH_network/STITCH_900_sif.csv"))
 
+#Import omnipath causal interactions in SIF format
 omni_network <- as.data.frame(read_delim("Dropbox/Meta_PKN/omnipath_netowrk/omni_PPI_clean.sif", 
                       "\t", escape_double = FALSE, trim_ws = TRUE))
 
+#Get a vector of omnipath proteins
 omni_prots <- unique(c(omni_network$source, omni_network$target))
 
+#Map omnipath proteins to NCBI gene ids (entrez)
 library(biomaRt)
 
 ensembl = useEnsembl(biomart="ensembl", dataset="hsapiens_gene_ensembl")
@@ -22,6 +27,7 @@ G_list <- unique(G_list)
 G_list_vec <- G_list$entrezgene
 names(G_list_vec) <- G_list$hgnc_symbol
 
+#Convert Gene symbols of omnipath to NCBI Ids
 for(i in c(1,3))
 {
   for(j in 1:length(omni_network[,1]))
@@ -33,13 +39,16 @@ for(i in c(1,3))
   }
 }
 
-#######################
+### We need to ad comprtments to the metabolites in STITCH so we can link them to recon3D
 
+#make a vector of metaoblites in STITCH
 metabs <- unique(c(reaction_network_recon3_no_cofact$V1, reaction_network_recon3_no_cofact$V2))
 metabs <- metabs[grepl("Metab__",metabs)]
 
+#We create a dataframe mapping metabolites names with compartments
 metabs <- as.data.frame(cbind(metabs, gsub("[[][a-z][]]","",metabs)))
 
+#We create a new STITCH SIF dataframe where the metabolites avec the compartment suffixes
 row_list <- list()
 for(i in 1:length(STITCH_900_sif[,1]))
 {
@@ -62,14 +71,16 @@ for(i in 1:length(STITCH_900_sif[,1]))
 
 STITCH_900_sif_compartiments <- as.data.frame(do.call(rbind,row_list))
 
-#################
+### Genes of the reaction network are uniquelly identified with respect to the reaction they belong too. There are also gene complexes. Thus we need to map them to their original gene name to conect them to the other networks.
 
+# We create a dataframe conecting unique gene_reactio nidentifiers to genes.
 genes <- unique(c(reaction_network_recon3_no_cofact$V1, reaction_network_recon3_no_cofact$V2))
 genes <- genes[grepl("Gene",genes)]
 genes <- as.data.frame(cbind(genes,gsub("Gene[0-9]+__","",genes)))
 genes$V2 <- gsub("_reverse","",genes$V2)
 genes <- unique(genes)
 
+# We expand this dataframe by splitting the gene complexes. We assume that each complexe only one of it's gene to be activated for the complexe to be activated. Cohenrently, only one of the member need to be inhibited for the complexe to be inhibited.
 row_list <- list()
 for(i in 1:length(genes[,1]))
 {
@@ -89,17 +100,22 @@ for(i in 1:length(genes[,1]))
 }
 
 meta_nodes <- as.data.frame(do.call(rbind,row_list))
-meta_nodes <- meta_nodes[meta_nodes$V2 %in% omni_network$source | meta_nodes$V2 %in% omni_network$target,]
+
+#We filter out that are not in omnipath
+meta_nodes <- meta_nodes[(meta_nodes$V2 %in% omni_network$source | meta_nodes$V2 %in% omni_network$target) | meta_nodes$V2 %in% STITCH_900_sif_compartiments$V3,]
 meta_nodes$sign <- 1
 meta_nodes <- meta_nodes[,c(2,3,1)]
 
-###############
+#### We just need to filter out nodes of STITCH that are not in omnipath and then connect everything together
+
+# Filter out nodes of STITCH that are not connected to the other networks
 STITCH_900_sif_compartiments_filtered <- STITCH_900_sif_compartiments[
   STITCH_900_sif_compartiments$V3 %in% meta_nodes[1,] |
   STITCH_900_sif_compartiments$V3 %in% omni_network$source |
     STITCH_900_sif_compartiments$V3 %in% omni_network$target,
 ]
 
+# Make names consistent and crbind everything
 names(STITCH_900_sif_compartiments_filtered) <- c("source","interaction","target")
 
 names(meta_nodes) <- c("source","interaction","target")
@@ -112,4 +128,5 @@ names(omni_network) <- c("source","interaction","target")
 
 meta_network <- do.call(rbind,list(STITCH_900_sif_compartiments_filtered,meta_nodes, reaction_network_recon3_no_cofact, omni_network))
 
+# Export network
 write_csv(meta_network, "Dropbox/Meta_PKN/result/meta_network.csv")
