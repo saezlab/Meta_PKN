@@ -129,4 +129,5 @@ names(omni_network) <- c("source","interaction","target")
 meta_network <- do.call(rbind,list(STITCH_900_sif_compartiments_filtered,meta_nodes, reaction_network_recon3_no_cofact, omni_network))
 
 # Export network
+meta_network <- meta_network[c(length(meta_network[,1]),1:(length(meta_network[,1])-1)),]
 write_csv(meta_network, "Dropbox/Meta_PKN/result/meta_network.csv")
