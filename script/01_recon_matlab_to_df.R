@@ -2,7 +2,7 @@ library(R.matlab)
 library(stringr)
 library(readr)
 
-recon3D <- readMat("Dropbox/Meta_PKN/recon3D_netowrk/recon_model/Recon3DModel_301.mat")
+recon3D <- readMat("Dropbox/Meta_PKN/recon3D_netowrk/Recon3DModel_301.mat")
 
 #get the stochio matrix
 S <- as.matrix(recon3D$Recon3DModel[[1]])
@@ -42,6 +42,7 @@ reaction_to_genes_original <- reaction_to_genes
 
 #get metabolites
 metabolites <- unlist(recon3D$Recon3DModel[[2]])
+metabolites_names <- unlist(recon3D$Recon3DModel[[15]])
 # KEGG <- recon3D$Recon3DModel[[18]]
 PubChem <- recon3D$Recon3DModel[[19]]
 # for(i in 1:length(metabolites))
@@ -52,15 +53,22 @@ PubChem <- recon3D$Recon3DModel[[19]]
 #     metabolites[i] <- paste(KEGG[[i]][[1]],comp, sep = "[")
 #   }
 # }
+metab_to_pubchem <- as.data.frame(matrix(NA,length(metabolites), 2))
+names(metab_to_pubchem) <- c("name","pubchem")
+
 for(i in 1:length(metabolites))
 {
+  metab_to_pubchem[i,1] <- metabolites_names[i]
   if(length(PubChem[[i]][[1]]) > 0)
   {
+    metab_to_pubchem[i,2] <- PubChem[[i]][[1]]
     comp <- gsub(".*[[]","",metabolites[i])
     metabolites[i] <- paste(PubChem[[i]][[1]],comp, sep = "[")
   }
 }
-
+metab_to_pubchem <- metab_to_pubchem[complete.cases(metab_to_pubchem),]
+metab_to_pubchem <- unique(metab_to_pubchem)
+write_csv(metab_to_pubchem, "~/Dropbox/Meta_PKN/support/metab_to_pubchem.csv")
 
 #We will modify the name of genes as we go so we save the original names
 reaction_to_genes <- reaction_to_genes_original
