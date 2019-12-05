@@ -1,7 +1,7 @@
 library(readr)
 
 meta_network_carnival_ready <- as.data.frame(
-  read_csv("Dropbox/Meta_PKN/result/meta_network_carnival_ready.csv"))
+  read_csv("Dropbox/Meta_PKN/result/meta_network_carnival_ready_new.csv"))
 
 meta_network_carnival_ready$source <- paste("X",meta_network_carnival_ready$source, sep = "")
 meta_network_carnival_ready$target <- paste("X",meta_network_carnival_ready$target, sep = "")
@@ -13,7 +13,7 @@ metab_enzyme_reactions <- unique(c(
   meta_network_carnival_ready$source,
   meta_network_carnival_ready$target))
 
-metab_enzyme_reactions <- unique(metab_enzyme_reaction[grepl("XGene.*", metab_enzyme_reaction)])
+metab_enzyme_reactions <- unique(metab_enzyme_reactions[grepl("XGene.*", metab_enzyme_reactions)])
 
 exchanges <- rep(F,length(metab_enzyme_reactions))
 

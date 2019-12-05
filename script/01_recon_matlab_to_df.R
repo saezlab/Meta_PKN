@@ -134,11 +134,14 @@ write_csv(reactions_df, "Dropbox/Meta_PKN/recon3D_netowrk/reaction_network_recon
 ###############################
 
 gene_metab_network <- reactions_df
+gene_metab_network$V1 <- gsub("[[][a-z][]]","",gene_metab_network$V1)
+gene_metab_network$V2 <- gsub("[[][a-z][]]","",gene_metab_network$V2)
 
 nodes <- rep(1,length(unique(c(gene_metab_network$V1, gene_metab_network$V2))))
 names(nodes) <- unique(c(gene_metab_network$V1, gene_metab_network$V2))
 
 metabs <- nodes[grepl("Metab__",names(nodes))]
+# names(metabs) <- gsub("[[][a-z][]]","",names(metabs))
 
 i <- 1
 for(metab in names(metabs))
@@ -151,11 +154,14 @@ for(metab in names(metabs))
 
 metabs_sorted <- sort(metabs, decreasing = T)
 
-kegg_amino_acid_only <- as.data.frame(read_csv("Dropbox/Meta_PKN/support/support/kegg_amino_acid_only", col_names = FALSE))
+write(as.character(gsub("Metab__","",names(metabs_sorted))),"~/Dropbox/Meta_PKN/recon3D_netowrk/pubchem_compound_list.txt")
 
-metabs_sorted <- metabs_sorted[metabs_sorted < 200 | gsub("Metab__","",gsub("[[][a-z][]]","",names(metabs_sorted))) %in% kegg_amino_acid_only$X1]
+coenzymes <- as.character(as.data.frame(read_csv("Dropbox/Meta_PKN/recon3D_netowrk/coenzymes.txt", 
+                      col_names = FALSE))[,1]) #see 01b_list_coenzymes.R
+metabs_sorted <- metabs_sorted[!(gsub("Metab__","",gsub("[[][a-z][]]","",names(metabs_sorted))) %in% coenzymes)]
+metabs_sorted <- metabs_sorted[metabs_sorted < 350]
 
-gene_metab_network_no_cofac <- gene_metab_network[gene_metab_network$V1 %in% names(metabs_sorted) | gene_metab_network$V2 %in% names(metabs_sorted),]
+gene_metab_network_no_cofac <- reactions_df[gsub("[[][a-z][]]","",reactions_df$V1) %in% names(metabs_sorted) | gsub("[[][a-z][]]","",reactions_df$V2) %in% names(metabs_sorted),]
 
 write_csv(gene_metab_network_no_cofac, "Dropbox/Meta_PKN/recon3D_netowrk/reaction_network_recon3_no_cofact.csv")
 

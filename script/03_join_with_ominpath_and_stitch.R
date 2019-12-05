@@ -19,7 +19,7 @@ library(biomaRt)
 ensembl = useEnsembl(biomart="ensembl", dataset="hsapiens_gene_ensembl")
 
 G_list <- getBM(filters = 'hgnc_symbol', 
-                attributes = c("ensembl_peptide_id",'hgnc_symbol','entrezgene', "description"),
+                attributes = c("ensembl_peptide_id",'hgnc_symbol','entrezgene_id', "description"),
                 values = omni_prots, mart = ensembl)
 
 G_list <- G_list[,c(2,3)]
@@ -129,5 +129,15 @@ names(omni_network) <- c("source","interaction","target")
 meta_network <- do.call(rbind,list(STITCH_900_sif_compartiments_filtered,meta_nodes, reaction_network_recon3_no_cofact, omni_network))
 
 # Export network
+meta_network <- meta_network[meta_network$source != meta_network$target,]
 meta_network <- meta_network[c(length(meta_network[,1]),1:(length(meta_network[,1])-1)),]
 write_csv(meta_network, "Dropbox/Meta_PKN/result/meta_network.csv")
+
+meta_network_carnival_ready <- meta_network
+meta_network_carnival_ready$source <- gsub("[[]","___",meta_network_carnival_ready$source)
+meta_network_carnival_ready$target <- gsub("[[]","___",meta_network_carnival_ready$target)
+
+meta_network_carnival_ready$source <- gsub("[]]","____",meta_network_carnival_ready$source)
+meta_network_carnival_ready$target <- gsub("[]]","____",meta_network_carnival_ready$target)
+
+write_csv(meta_network_carnival_ready, "Dropbox/Meta_PKN/result/meta_network_carnival_ready_new.csv")
