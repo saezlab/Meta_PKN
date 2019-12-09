@@ -7,16 +7,16 @@ library(rlist)
 
 get_MeSH_class <- function(cid)
 {
-  prolog <- 'https://pubchem.ncbi.nlm.nih.gov/rest/pug'
+  prefix <- 'https://pubchem.ncbi.nlm.nih.gov/rest/pug'
   input <- '/compound/cid'
-  output <- '/classification/JSON'
+  suffix <- '/classification/JSON'
   
-  qurl <- paste0(prolog, input, output)
+  qurl <- paste0(prefix, input, suffix)
   
   cont <- content(POST(qurl,body = list("cid" = paste(cid, collapse = ','))), type = 'text', encoding = 'UTF-8')
   
   cont <- fromJSON(cont)
-  kegg <- FALSE
+  MeSH <- FALSE
   if(names(cont) != "Fault")
   {
     cont <- cont[[1]][[1]]
@@ -25,14 +25,14 @@ get_MeSH_class <- function(cid)
     {
       if(cont[[i]]$SourceName == "MeSH")
       {
-        kegg_class <- cont[[i]]
-        kegg <- TRUE
+        MeSH_class <- cont[[i]]
+        MeSH <- TRUE
       }
     }
   }
-  if(kegg)
+  if(MeSH)
   {
-    return(list(cid,kegg_class))
+    return(list(cid,MeSH_class))
   }
   else
   {

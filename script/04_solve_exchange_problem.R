@@ -20,14 +20,18 @@ exchanges <- rep(F,length(metab_enzyme_reactions))
 e <- 1
 k <- 1
 df_exchanges <- list()
-for(metab_enzyme_reaction in metab_enzyme_reactions)
+for(metab_enzyme_reaction in metab_enzyme_reactions) #in this loop, we separate exchange reaction into distinct path to ensure different metabolites cannot be transformed into one another through exchanges
 {
-  print(e)
+  # print(e)
   df <- meta_network_carnival_ready[
     meta_network_carnival_ready$source == metab_enzyme_reaction |
       meta_network_carnival_ready$target == metab_enzyme_reaction,
   ]
   df_inverse <- df[,c(3,2,1)]
+  if(metab_enzyme_reaction == "XGene5599__3767_6833")
+  {
+    print(e)
+  }
   for(i in 1:length(df[,1]))
   {
     for(j in i:length(df_inverse[,1]))
@@ -39,16 +43,35 @@ for(metab_enzyme_reaction in metab_enzyme_reactions)
         
         if(sum(grepl("X[0-9]+$",df[,1])) != 0)
         {
-          new_row <- df[grepl("X[0-9]+$",df[,1]),]
-          new_row[3] <- paste(new_row[3], paste("EXCHANGE",i,sep = ""),sep = "")
-          df <- as.data.frame(rbind(df,new_row))
+          new_row <- df[grepl("X[0-9]+$",df[,1]) & !grepl("EXCHANGE",df[,3]),]
+          if(length(new_row[,1]) == 1){
+            new_row[3] <- paste(new_row[3], paste("EXCHANGE",i,sep = ""),sep = "")
+            df <- as.data.frame(rbind(df,new_row))
+          } else
+          {
+            for(m in 1:length(new_row[,1]))
+            {
+              new_row[m,3] <- paste(new_row[m,3], paste("EXCHANGE",i,sep = ""),sep = "")
+              df <- as.data.frame(rbind(df,new_row))
+            }
+          }
+
         } else
         {
           if(sum(grepl("X[0-9]+$",df[,3])) != 0)
           {
-            new_row <- df[grepl("X[0-9]+$",df[,3]),]
-            new_row[1] <- paste(new_row[1], paste("EXCHANGE",i,sep = ""),sep = "")
-            df <- as.data.frame(rbind(df,new_row))
+            new_row <- df[grepl("X[0-9]+$",df[,3]) & !grepl("EXCHANGE",df[,1]),]
+            if(length(new_row[,1]) == 1){
+              new_row[3] <- paste(new_row[1], paste("EXCHANGE",i,sep = ""),sep = "")
+              df <- as.data.frame(rbind(df,new_row))
+            } else
+            {
+              for(m in 1:length(new_row[,1]))
+              {
+                new_row[m,1] <- paste(new_row[m,1], paste("EXCHANGE",i,sep = ""),sep = "")
+                df <- as.data.frame(rbind(df,new_row))
+              }
+            }
           }
         }
         # print(df)
@@ -78,7 +101,10 @@ meta_network_carnival_ready <- meta_network_carnival_ready[!(
 ]
 
 meta_network_carnival_ready <- as.data.frame(rbind(meta_network_carnival_ready, df_exchanges))
+row.names(meta_network_carnival_ready) <- c(1:length(meta_network_carnival_ready[,1]))
 
+
+meta_network_carnival_ready <- unique(meta_network_carnival_ready)
 write_csv(meta_network_carnival_ready, "~/Dropbox/Meta_PKN/result/meta_network_carnival_ready_exch_solved.csv")
 write_tsv(meta_network_carnival_ready, "~/Dropbox/Meta_PKN/result/meta_network_carnival_ready_exch_solved.tsv")
 

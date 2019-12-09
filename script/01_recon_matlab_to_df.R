@@ -158,8 +158,9 @@ write(as.character(gsub("Metab__","",names(metabs_sorted))),"~/Dropbox/Meta_PKN/
 
 coenzymes <- as.character(as.data.frame(read_csv("Dropbox/Meta_PKN/recon3D_netowrk/coenzymes.txt", 
                       col_names = FALSE))[,1]) #see 01b_list_coenzymes.R
+
 metabs_sorted <- metabs_sorted[!(gsub("Metab__","",gsub("[[][a-z][]]","",names(metabs_sorted))) %in% coenzymes)]
-metabs_sorted <- metabs_sorted[metabs_sorted < 350]
+metabs_sorted <- metabs_sorted[metabs_sorted < 350] #smallest number of connections before we find important metabolties
 
 gene_metab_network_no_cofac <- reactions_df[gsub("[[][a-z][]]","",reactions_df$V1) %in% names(metabs_sorted) | gsub("[[][a-z][]]","",reactions_df$V2) %in% names(metabs_sorted),]
 
