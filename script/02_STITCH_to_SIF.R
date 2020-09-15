@@ -4,8 +4,24 @@ library(readr)
 STITCH_900 <- as.data.frame(read_delim("Dropbox/Meta_PKN/STITCH_network/STITCH_900.tsv", 
                          "\t", escape_double = FALSE, trim_ws = TRUE))
 
+####THIS SECTION TO REMOVE TEXTMINING
+X9606_protein_chemical_links_detailed_v5_0 <- as.data.frame(read_delim("Dropbox/Meta_PKN/STITCH_network/9606.protein_chemical.links.detailed.v5.0.tsv", 
+                                                         "\t", escape_double = FALSE, trim_ws = TRUE))
+
+not_text_mining <- X9606_protein_chemical_links_detailed_v5_0[X9606_protein_chemical_links_detailed_v5_0$combined_score >= 900,]
+rm(X9606_protein_chemical_links_detailed_v5_0)
+
+not_text_mining$ID <- paste(not_text_mining$chemical, not_text_mining$protein , sep = "_")
+not_text_mining$ID_reverse <- paste(not_text_mining$protein, not_text_mining$chemical, sep = "_")
+
+not_text_mining <- not_text_mining[(not_text_mining$experimental + not_text_mining$prediction + not_text_mining$prediction) >= 900,]
+
 ### We only care about allosteric interactions
 STITCH_900 <- STITCH_900[STITCH_900$a_is_acting,]
+STITCH_900$ID <- paste(STITCH_900$item_id_a, STITCH_900$item_id_b, sep = "_")
+STITCH_900 <- STITCH_900[STITCH_900$ID %in% not_text_mining$ID | STITCH_900$ID %in% not_text_mining$ID_reverse,]
+STITCH_900 <- STITCH_900[,-7]
+####END OF REMOVE TEXTMINING
 
 ### We need to map the Ensembl Ids to NCBI gene ids
 
@@ -22,7 +38,7 @@ library(biomaRt)
 ensembl = useEnsembl(biomart="ensembl", dataset="hsapiens_gene_ensembl")
 
 G_list <- getBM(filters = "ensembl_peptide_id", 
-                attributes = c("ensembl_peptide_id",'hgnc_symbol','entrezgene', "description"),
+                attributes = c("ensembl_peptide_id",'hgnc_symbol','entrezgene_id', "description"),
                 values = prots$V2, mart = ensembl)
 names(G_list)[1] <- "V2"
 

@@ -6,16 +6,29 @@ reaction_network_recon3_no_cofact <- as.data.frame(read_csv("Dropbox/Meta_PKN/re
 #Import STITCH allosteric interactions in SIF format
 STITCH_900_sif <- as.data.frame(read_csv("Dropbox/Meta_PKN/STITCH_network/STITCH_900_sif.csv"))
 
-#Import omnipath causal interactions in SIF format
-omni_network <- as.data.frame(read_delim("Dropbox/Meta_PKN/omnipath_netowrk/omni_PPI_clean.sif", 
-                      "\t", escape_double = FALSE, trim_ws = TRUE))
+#Import omnipath
+url <- "http://omnipathdb.org/interactions?types=post_translational,transcriptional&datasets=omnipath,pathwayextra,dorothea&fields=sources,references,curation_effort,dorothea_level,type&genesymbols=yes"
 
-###### Comment out this part for no dorothea
-dorothea_ABC_no0_20200710 <- as.data.frame(read_csv("Dropbox/Meta_PKN/support/dorothea_ABC_no0_20200710.csv"))[,c(2,3,1)]
-names(dorothea_ABC_no0_20200710) <- names(omni_network)
-omni_network <- unique(as.data.frame(rbind(omni_network, dorothea_ABC_no0_20200710)))
-######
+download_omnipath <- function(){
+  
+  read.table(url, sep = '\t', header = TRUE)
+  
+}
 
+omni_network <- download_omnipath()
+omni_network <- omni_network[omni_network$consensus_stimulation != 0 | omni_network$consensus_inhibition != 0,]
+omni_network <- omni_network[,c(3,4,9,10)]
+omni_network$Interaction <- omni_network$consensus_stimulation - omni_network$consensus_inhibition
+cons_0 <- omni_network[omni_network$Interaction == 0,]
+omni_network <- omni_network[omni_network$Interaction != 0,]
+cons_0$consensus_inhibition <- 0
+cons_0$Interaction <- 1
+omni_network <- as.data.frame(rbind(omni_network,cons_0))
+cons_0$consensus_inhibition <- 1
+cons_0$consensus_stimulation <- 0
+cons_0$Interaction <- -1
+omni_network <- as.data.frame(rbind(omni_network,cons_0))
+omni_network <- omni_network[,c(1,5,2)]
 
 #Get a vector of omnipath proteins
 omni_prots <- unique(c(omni_network$source, omni_network$target))
@@ -46,6 +59,15 @@ for(i in c(1,3))
   }
 }
 
+recon_nodes <- unique(c(reaction_network_recon3_no_cofact$V1, reaction_network_recon3_no_cofact$V2))
+recon_nodes <- recon_nodes[!grepl("Metab",recon_nodes)]
+recon_nodes <- recon_nodes[!grepl("_reverse",recon_nodes)]
+recon_nodes <- recon_nodes[!grepl("__[A-Za-z]",recon_nodes)]
+recon_nodes <- recon_nodes[!grepl("[A-Za-z]$",recon_nodes)]
+
+recon_nodes <- gsub("Gene[0-9]+__","",recon_nodes)
+
+omni_network <- omni_network[!(omni_network$source_genesymbol %in% recon_nodes),]
 ### We need to ad comprtments to the metabolites in STITCH so we can link them to recon3D
 
 #make a vector of metaoblites in STITCH
@@ -118,9 +140,9 @@ meta_nodes <- meta_nodes[,c(2,3,1)]
 # Filter out nodes of STITCH that are not connected to the other networks
 STITCH_900_sif_compartiments_filtered <- STITCH_900_sif_compartiments[
   STITCH_900_sif_compartiments$V3 %in% meta_nodes[1,] |
-  STITCH_900_sif_compartiments$V3 %in% omni_network$source |
+    STITCH_900_sif_compartiments$V3 %in% omni_network$source |
     STITCH_900_sif_compartiments$V3 %in% omni_network$target,
-]
+  ]
 
 # Make names consistent and crbind everything
 names(STITCH_900_sif_compartiments_filtered) <- c("source","interaction","target")
@@ -138,7 +160,7 @@ meta_network <- meta_network[complete.cases(meta_network),]
 # Export network
 meta_network <- meta_network[meta_network$source != meta_network$target,]
 meta_network <- meta_network[c(length(meta_network[,1]),1:(length(meta_network[,1])-1)),]
-write_csv(meta_network, "Dropbox/Meta_PKN/result/meta_network_with_doro.csv")
+write_csv(meta_network, "Dropbox/Meta_PKN/result/meta_network_fullomni_metfiltered.csv")
 
 meta_network_carnival_ready <- meta_network
 meta_network_carnival_ready$source <- gsub("[[]","___",meta_network_carnival_ready$source)
@@ -151,4 +173,4 @@ meta_network_carnival_ready <- unique(as.data.frame(
   rbind(meta_network_carnival_ready[12158,],meta_network_carnival_ready)
 ))
 
-write_csv(meta_network_carnival_ready, "Dropbox/Meta_PKN/result/meta_network_carnival_ready_new_with_doro.csv")
+write_csv(meta_network_carnival_ready, "Dropbox/Meta_PKN/result/meta_network_carnival_ready_fullomni_metfiltered.csv")

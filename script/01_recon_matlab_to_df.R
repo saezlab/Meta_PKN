@@ -154,15 +154,28 @@ for(metab in names(metabs))
 
 metabs_sorted <- sort(metabs, decreasing = T)
 
-write(as.character(gsub("Metab__","",names(metabs_sorted))),"~/Dropbox/Meta_PKN/recon3D_netowrk/pubchem_compound_list.txt")
+# write(as.character(gsub("Metab__","",names(metabs_sorted))),"~/Dropbox/Meta_PKN/recon3D_netowrk/pubchem_compound_list.txt")
 
 coenzymes <- as.character(as.data.frame(read_csv("Dropbox/Meta_PKN/recon3D_netowrk/coenzymes.txt", 
                       col_names = FALSE))[,1]) #see 01b_list_coenzymes.R
 
 metabs_sorted <- metabs_sorted[!(gsub("Metab__","",gsub("[[][a-z][]]","",names(metabs_sorted))) %in% coenzymes)]
+to_write <- as.data.frame(metabs_sorted)
+to_write$pubchem <- row.names(to_write)
+write_csv(to_write[,c(2,1)], "~/Dropbox/Meta_PKN/support/metab_cardinality.csv")
 metabs_sorted <- metabs_sorted[metabs_sorted < 350] #smallest number of connections before we find important metabolties
 
 gene_metab_network_no_cofac <- reactions_df[gsub("[[][a-z][]]","",reactions_df$V1) %in% names(metabs_sorted) | gsub("[[][a-z][]]","",reactions_df$V2) %in% names(metabs_sorted),]
 
 write_csv(gene_metab_network_no_cofac, "Dropbox/Meta_PKN/recon3D_netowrk/reaction_network_recon3_no_cofact.csv")
 
+metabs <- unique(c(gene_metab_network_no_cofac$V1, gene_metab_network_no_cofac$V2))
+metabs <- metabs[grepl("Metab",metabs)]
+metabs <- gsub("Metab__","",metabs)
+metabs <- gsub("[[].*","",metabs)
+metabs <- unique(metabs)
+
+metab_to_pubchem <- metab_to_pubchem[metab_to_pubchem$pubchem %in% metabs,]
+metab_to_pubchem <- unique(metab_to_pubchem)
+
+write_csv(metab_to_pubchem, "~/Dropbox/Meta_PKN/support/metab_to_pubchem_cofactfiltered.csv")

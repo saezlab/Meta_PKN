@@ -1,7 +1,7 @@
 library(readr)
 
 meta_network_carnival_ready <- as.data.frame(
-  read_csv("Dropbox/Meta_PKN/result/meta_network_carnival_ready_new_with_doro.csv"))
+  read_csv("Dropbox/Meta_PKN/result/meta_network_carnival_ready_fullomni.csv"))
 
 meta_network_carnival_ready$source <- paste("X",meta_network_carnival_ready$source, sep = "")
 meta_network_carnival_ready$target <- paste("X",meta_network_carnival_ready$target, sep = "")
@@ -26,7 +26,7 @@ for(metab_enzyme_reaction in metab_enzyme_reactions) #in this loop, we separate 
   df <- meta_network_carnival_ready[
     meta_network_carnival_ready$source == metab_enzyme_reaction |
       meta_network_carnival_ready$target == metab_enzyme_reaction,
-  ]
+    ]
   df_inverse <- df[,c(3,2,1)]
   if(metab_enzyme_reaction == "XGene5599__3767_6833")
   {
@@ -55,7 +55,7 @@ for(metab_enzyme_reaction in metab_enzyme_reactions) #in this loop, we separate 
               df <- as.data.frame(rbind(df,new_row))
             }
           }
-
+          
         } else
         {
           if(sum(grepl("X[0-9]+$",df[,3])) != 0)
@@ -98,14 +98,14 @@ exchange_reactions <- metab_enzyme_reactions[exchanges]
 meta_network_carnival_ready <- meta_network_carnival_ready[!(
   meta_network_carnival_ready$source %in% exchange_reactions |
     meta_network_carnival_ready$target %in% exchange_reactions),
-]
+  ]
 
 meta_network_carnival_ready <- as.data.frame(rbind(meta_network_carnival_ready, df_exchanges))
 row.names(meta_network_carnival_ready) <- c(1:length(meta_network_carnival_ready[,1]))
 
 
 meta_network_carnival_ready <- unique(meta_network_carnival_ready)
-write_csv(meta_network_carnival_ready, "~/Dropbox/Meta_PKN/result/meta_network_carnival_ready_exch_solved_withdoro.csv")
-write_tsv(meta_network_carnival_ready, "~/Dropbox/Meta_PKN/result/meta_network_carnival_ready_exch_solved_withdoro.tsv")
+write_csv(meta_network_carnival_ready, "~/Dropbox/Meta_PKN/result/meta_network_carnival_ready_exch_solved_fullomni.csv")
+write_tsv(meta_network_carnival_ready, "~/Dropbox/Meta_PKN/result/meta_network_carnival_ready_exch_solved_fullomni.tsv")
 
 
