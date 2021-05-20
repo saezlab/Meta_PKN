@@ -1,10 +1,12 @@
-{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf200
-{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\froman\fcharset0 Times-Roman;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue233;}
-{\*\expandedcolortbl;;\cssrgb\c0\c0\c93333;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
-\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+Script to generate the meta_PKN used in the COSMOS Paper.
 
-\f0\fs24 \cf0 Model obtained from : {\field{\*\fldinst{HYPERLINK "https://www.vmh.life/#downloadview"}}{\fldrslt 
-\f1 \cf2 \expnd0\expndtw0\kerning0
-\ul \ulc2 \outl0\strokewidth0 \strokec2 https://www.vmh.life/#downloadview}}}
+Run in order:
+01_recon_matlab_to_df.R
+01b_list_coenzymes.R
+02_STITCH_to_SIF.R
+03revision_join_with_ominpath_and_stitch_met_filtered.R
+04revision_solve_exchange_problem_metfiltered.R
+
+Metabolic network that the PKN relies was obtained from: https://www.vmh.life/#downloadview
+
+Mind that we have generated a new PKN since the publication, that is lighter and better curated. We strongly advise users to use this one instead: https://github.com/saezlab/cosmos_meta_PKN_redhuman
